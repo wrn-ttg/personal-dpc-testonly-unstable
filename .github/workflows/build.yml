@@ -24,10 +24,20 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      # Finds the project wherever it was uploaded (repo root or a subfolder).
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          SETTINGS=$(find . -name settings.gradle.kts -not -path "./.git/*" | head -n 1)
+          if [ -z "$SETTINGS" ]; then
+            echo "settings.gradle.kts not found in the repository. Files present:"
+            find . -not -path "./.git/*" -type f | head -n 50
+            exit 1
+          fi
+          cd "$(dirname "$SETTINGS")"
+          echo "Building in $(pwd)"
+          gradle assembleDebug --no-daemon --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: downtime-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
